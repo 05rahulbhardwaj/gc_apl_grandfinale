@@ -100,9 +100,14 @@ async def lifespan(app: FastAPI):
     # 1. Initialize real state so zones exist immediately before analysis
     initial_zones, initial_gates = _build_real_data()
     
+    total_inside = sum(z.person_count for z in initial_zones if z.zone_id.startswith(("north", "south", "east", "west", "food")))
+    total_outside = sum(z.person_count for z in initial_zones if z.zone_id.startswith("gate"))
+
     with state_lock:
         stadium_state.zones = initial_zones
         stadium_state.gates = initial_gates
+        stadium_state.total_crowd_inside = total_inside
+        stadium_state.total_crowd_outside = total_outside
 
     # Start RTSP people counter (if URL configured)
     if RTSP_URL:
@@ -223,7 +228,10 @@ async def trigger_action(action_type: str):
 @app.post("/api/send-sms")
 async def send_sms(payload: dict):
     """Send SMS via Fast2SMS API."""
-    import httpx
+    import urllib.request
+    import urllib.parse
+    import json
+    
     api_key = "6iU5cjJen3Ax0VpglsS4LEQONftboGC9quHXd7wKDrBMhYymTW98Q5LXEdCrNwb3jB1vOAmpasyHYT0U"
     url = "https://www.fast2sms.com/dev/bulkV2"
     
@@ -233,25 +241,30 @@ async def send_sms(payload: dict):
     if not number or not message:
         raise HTTPException(status_code=400, detail="Number and message required")
 
+    data = urllib.parse.urlencode({
+        'route': 'q',
+        'message': message,
+        'language': 'english',
+        'flash': 0,
+        'numbers': number
+    }).encode('utf-8')
+
     headers = {
-        "authorization": api_key,
-        "Content-Type": "application/json"
+        'authorization': api_key,
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
-    data = {
-        "route": "v3",
-        "sender_id": "TXTIND",
-        "message": message,
-        "language": "english",
-        "flash": 0,
-        "numbers": number
-    }
+
+    request = urllib.request.Request(url, data=data, headers=headers, method='POST')
     
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(url, headers=headers, json=data, timeout=10.0)
-            resp.raise_for_status()
-            logger.info(f"SMS sent to {number}: {resp.text}")
-            return resp.json()
+        loop = asyncio.get_event_loop()
+        def _send():
+            with urllib.request.urlopen(request) as response:
+                return json.loads(response.read().decode('utf-8'))
+        
+        result = await loop.run_in_executor(None, _send)
+        logger.info(f"SMS sent to {number}: {result}")
+        return result
     except Exception as e:
         logger.error(f"Failed to send SMS: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -455,7 +468,7 @@ async def _run_single_orchestration():
         scan_rate = float(ticket_scanner.total_scans) / max(1, 1)  # rough
 
     # 5. Build interim state for orchestrator input
-    total_inside = sum(z.person_count for z in zones if z.zone_id.startswith(("north", "south", "east", "west")))
+    total_inside = sum(z.person_count for z in zones if z.zone_id.startswith(("north", "south", "east", "west", "food")))
     total_outside = sum(z.person_count for z in zones if z.zone_id.startswith("gate"))
 
     with state_lock:

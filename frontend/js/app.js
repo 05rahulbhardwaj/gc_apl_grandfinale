@@ -22,36 +22,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Button Listeners
     document.getElementById('demo-scenario-btn').addEventListener('click', startDemoScenario);
-    document.getElementById('execute-all-btn').addEventListener('click', () => {
-        executeAction('execute_all');
-        const btn = document.getElementById('execute-all-btn');
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Executed';
-        btn.style.background = 'var(--status-safe)';
-        setTimeout(() => {
-            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Execute All Actions';
-            btn.style.background = '';
-        }, 3000);
-    });
 
     const rtspModal = document.getElementById('rtsp-modal');
     const settingsModal = document.getElementById('settings-modal');
 
-    // Settings Modal
+    // Settings Modal (Dynamic Contacts)
+    const contactsContainer = document.getElementById('contacts-container');
+    
+    function createContactRow(name = '', mobile = '', seat = '') {
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.style.display = 'flex';
+        row.style.gap = '10px';
+        row.style.alignItems = 'center';
+        
+        row.innerHTML = `
+            <input type="text" class="glass-input contact-name" placeholder="Name" value="${name}" style="flex: 1;">
+            <input type="text" class="glass-input contact-mobile" placeholder="Mobile" value="${mobile}" style="flex: 1;">
+            <input type="text" class="glass-input contact-seat" placeholder="Seat No." value="${seat}" style="flex: 1; max-width: 100px;">
+            <button class="icon-btn remove-contact-btn" style="color: #ef4444;" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        `;
+        
+        row.querySelector('.remove-contact-btn').addEventListener('click', () => {
+            row.remove();
+        });
+        
+        contactsContainer.appendChild(row);
+    }
+
+    document.getElementById('add-contact-btn').addEventListener('click', () => createContactRow());
+
     document.getElementById('settings-btn').addEventListener('click', () => {
-        document.getElementById('p1-name').value = localStorage.getItem('person1Name') || '';
-        document.getElementById('p1-mobile').value = localStorage.getItem('person1Mobile') || '';
-        document.getElementById('p2-name').value = localStorage.getItem('person2Name') || '';
-        document.getElementById('p2-mobile').value = localStorage.getItem('person2Mobile') || '';
+        contactsContainer.innerHTML = '';
+        const savedContacts = JSON.parse(localStorage.getItem('broadcastContacts') || '[]');
+        if (savedContacts.length === 0) {
+            createContactRow(); // Show at least one empty row
+        } else {
+            savedContacts.forEach(c => createContactRow(c.name, c.mobile, c.seat));
+        }
         settingsModal.classList.remove('hidden');
     });
+
     document.getElementById('settings-close-btn').addEventListener('click', () => settingsModal.classList.add('hidden'));
+    
     document.getElementById('settings-save-btn').addEventListener('click', () => {
-        localStorage.setItem('person1Name', document.getElementById('p1-name').value);
-        localStorage.setItem('person1Mobile', document.getElementById('p1-mobile').value);
-        localStorage.setItem('person2Name', document.getElementById('p2-name').value);
-        localStorage.setItem('person2Mobile', document.getElementById('p2-mobile').value);
+        const rows = contactsContainer.querySelectorAll('.contact-row');
+        const contacts = [];
+        rows.forEach(row => {
+            const name = row.querySelector('.contact-name').value.trim();
+            const mobile = row.querySelector('.contact-mobile').value.trim();
+            const seat = row.querySelector('.contact-seat').value.trim();
+            if (name || mobile) { // Only save if at least name or mobile is provided
+                contacts.push({ name, mobile, seat });
+            }
+        });
+        localStorage.setItem('broadcastContacts', JSON.stringify(contacts));
         settingsModal.classList.add('hidden');
-        addTickerMessage('Notification settings saved locally.');
+        addTickerMessage(`Saved ${contacts.length} contacts locally.`);
     });
 
     document.getElementById('rtsp-close-btn').addEventListener('click', () => rtspModal.classList.add('hidden'));
@@ -167,10 +194,15 @@ function renderActionPlan(actions, riskLevel) {
     container.innerHTML = '';
     
     const badge = document.getElementById('risk-badge');
-    badge.textContent = riskLevel.toUpperCase() + ' RISK';
-    badge.className = `badge ${riskLevel.toLowerCase()}`;
+    badge.textContent = riskLevel ? riskLevel.toUpperCase() + ' RISK' : 'MEDIUM RISK';
+    badge.className = `badge ${riskLevel ? riskLevel.toLowerCase() : 'medium'}`;
 
-    actions.forEach((action, i) => {
+    // Only render the Broadcast action
+    const broadcastActions = [
+      { type: 'broadcast_ticket', description: 'Broadcast Entry, Exit & Seat Info to all added contacts' }
+    ];
+
+    broadcastActions.forEach((action, i) => {
         const div = document.createElement('div');
         div.className = 'action-item';
         div.innerHTML = `
@@ -178,17 +210,67 @@ function renderActionPlan(actions, riskLevel) {
                 <span style="color: var(--text-secondary); margin-right: 8px;">${i+1}.</span>
                 ${action.description}
             </div>
-            <button class="action-btn" onclick="executeAction('${action.action_type}')">
-                ${action.is_executed ? '<i class="fa-solid fa-check" style="color: var(--status-safe)"></i>' : 'Trigger'}
+            <button class="action-btn-cyan action-btn" onclick="executeAction(this, '${action.type}')" style="min-width: 120px;">
+                <i class="fa-solid fa-satellite-dish"></i> Broadcast
             </button>
         `;
         container.appendChild(div);
     });
 }
 
-async function executeAction(type) {
-    await fetch(`/api/actions/${type}`, { method: 'POST' });
-    addTickerMessage(`Action triggered: ${type.replace('_', ' ')}`);
+async function executeAction(btn, actionType) {
+    if (btn.classList.contains('executed')) return;
+
+    const savedContacts = JSON.parse(localStorage.getItem('broadcastContacts') || '[]');
+    if (savedContacts.length === 0) {
+        alert("Please add at least one contact in Settings first.");
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+    btn.disabled = true;
+
+    try {
+        let successCount = 0;
+
+        for (const contact of savedContacts) {
+            if (!contact.mobile) continue;
+
+            let message = "";
+            if (actionType === 'broadcast_ticket') {
+                const namePart = contact.name ? `Hi ${contact.name}, ` : '';
+                const seatPart = contact.seat ? ` Seat: ${contact.seat}.` : '';
+                message = `${namePart}Your match entry is via Gate 1, exit via Gate 3.${seatPart}`;
+            } else if (actionType === 'broadcast_weather') {
+                const namePart = contact.name ? `Hi ${contact.name}, ` : '';
+                message = `${namePart}Weather Update: Clear skies expected throughout the match. No rain predicted.`;
+            }
+
+            const response = await fetch(`/api/send-sms`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: contact.mobile, message: message })
+            });
+
+            if (response.ok) {
+                successCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> Sent to ${successCount}`;
+            btn.classList.add('executed');
+            btn.style.background = 'var(--status-safe)';
+        } else {
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Failed';
+            setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2000);
+        }
+    } catch (err) {
+        console.error('[Actions] Execute error:', err);
+        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+        setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 2000);
+    }
 }
 
 // -- Agents Panel --

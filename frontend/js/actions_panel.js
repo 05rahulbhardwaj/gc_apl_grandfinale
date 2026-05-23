@@ -39,10 +39,10 @@ class ActionsPanel {
    * @param {Object} actionPlan - { actions: [...], priority: 'high' }
    */
   updateActionPlan(actionPlan) {
-    // Ignore backend action plan, hardcode the Fast2SMS actions
+    // Ignore backend action plan, hardcode the Broadcast actions
     this.actions = [
-      { type: 'send_sms_1', description: 'Send Weather Forecast & Exit Gate 1 Info to Person 1' },
-      { type: 'send_sms_2', description: 'Send Match Schedule & Exit Gate 3 Info to Person 2' }
+      { type: 'broadcast_ticket', description: 'Broadcast Entry, Exit & Seat Info to all added contacts' },
+      { type: 'broadcast_weather', description: 'Broadcast Weather Prediction to all added contacts' }
     ];
     this._updatePriorityBadge('high');
     this._renderActions();
@@ -63,7 +63,7 @@ class ActionsPanel {
 
     this.actions.forEach((action, index) => {
       const actionType = action.type;
-      const style = { label: 'Send SMS', btnClass: 'action-btn-cyan', icon: '📱' };
+      const style = { label: 'Broadcast SMS', btnClass: 'action-btn-cyan', icon: '📡' };
       const description = action.description;
 
       const item = document.createElement('div');
@@ -93,43 +93,45 @@ class ActionsPanel {
     const btn = event.target.closest('.action-btn');
     if (btn.classList.contains('executed')) return;
 
+    const savedContacts = JSON.parse(localStorage.getItem('broadcastContacts') || '[]');
+    if (savedContacts.length === 0) {
+        alert("Please add at least one contact in Settings first.");
+        return;
+    }
+
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Sending...';
+    btn.innerHTML = '⏳ Broadcasting...';
     btn.disabled = true;
 
     try {
-      let payload = {};
-      
-      if (actionType === 'send_sms_1') {
-          const number = localStorage.getItem('person1Mobile');
-          if (!number) {
-              alert("Please configure Person 1 Mobile in Settings first.");
-              btn.innerHTML = originalText; btn.disabled = false; return;
+      let successCount = 0;
+
+      for (const contact of savedContacts) {
+          if (!contact.mobile) continue;
+
+          let message = "";
+          if (actionType === 'broadcast_ticket') {
+              const namePart = contact.name ? `Hi ${contact.name}, ` : '';
+              const seatPart = contact.seat ? ` Seat: ${contact.seat}.` : '';
+              message = `${namePart}Your match entry is via Gate 1, exit via Gate 3.${seatPart}`;
+          } else if (actionType === 'broadcast_weather') {
+              const namePart = contact.name ? `Hi ${contact.name}, ` : '';
+              message = `${namePart}Weather Update:\nClear skies expected throughout the match. No rain predicted.`;
           }
-          payload = {
-              number: number,
-              message: "Weather forecast: Clear skies. Please exit via Gate 1."
-          };
-      } else if (actionType === 'send_sms_2') {
-          const number = localStorage.getItem('person2Mobile');
-          if (!number) {
-              alert("Please configure Person 2 Mobile in Settings first.");
-              btn.innerHTML = originalText; btn.disabled = false; return;
+
+          const response = await fetch(`/api/send-sms`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ number: contact.mobile, message: message })
+          });
+
+          if (response.ok) {
+              successCount++;
           }
-          payload = {
-              number: number,
-              message: "Match Schedule: Starts 14:00, Ends 22:00. Please exit via Gate 3."
-          };
       }
 
-      const response = await fetch(`/api/send-sms`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        btn.innerHTML = '✅ Sent';
+      if (successCount > 0) {
+        btn.innerHTML = `✅ Sent to ${successCount}`;
         btn.classList.add('executed');
         this._showConfirmation(btn);
       } else {

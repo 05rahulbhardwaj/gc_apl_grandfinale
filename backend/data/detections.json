@@ -1,8 +1,10 @@
 {
     "north_stand": 2,
-    "food_court": 12,
-    "gate_4": 0,
-    "gate_3": 16,
+    "food_court": 11,
+    "gate_4": 4,
+    "gate_3": 10,
     "gate_1": 2,
-    "west_stand": 2
+    "west_stand": 2,
+    "east_stand": 4,
+    "gate_2": 6
 }

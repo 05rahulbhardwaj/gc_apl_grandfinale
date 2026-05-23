@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrowdPulse AI — Stadium Command Center</title>
+    <title>Eternal Crowd Sense AI — Stadium Command Center</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +24,7 @@
         <div class="logo-area">
             <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
             <div class="logo-text">
-                <h1>CrowdPulse AI</h1>
+                <h1>Eternal Crowd Sense AI</h1>
                 <p>Stadium Command Center</p>
             </div>
         </div>
@@ -36,10 +36,10 @@
                 <span class="vs">vs</span>
                 <span class="team team-mi">MI</span>
             </div>
-            <div class="timer">
+            <!-- <div class="timer">
                 <span class="timer-label">MATCH STARTS IN</span>
                 <span id="countdown-timer" class="timer-value">00:30:00</span>
-            </div>
+            </div> -->
         </div>
 
         <div class="right-header">
@@ -193,9 +193,6 @@
             <div id="action-items-container" class="scroll-container">
                 <!-- Actions injected here -->
             </div>
-            <button id="execute-all-btn" class="btn-primary-glow">
-                <i class="fa-solid fa-bolt"></i> Execute All Actions
-            </button>
         </section>
 
     </main>
@@ -232,25 +229,21 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal hidden">
-        <div class="modal-content glass-panel">
-            <h3><i class="fa-solid fa-gear"></i> Notification Settings</h3>
-            <p>Configure SMS recipients for the Action Plan.</p>
+        <div class="modal-content glass-panel" style="max-height: 80vh; overflow-y: auto;">
+            <h3><i class="fa-solid fa-users-gear"></i> Contact Settings</h3>
+            <p>Add contacts to receive broadcast notifications.</p>
             
-            <h4 style="margin-top: 15px; margin-bottom: 5px; color: var(--text-primary);">Person 1 (Weather & Gate 1)</h4>
-            <div class="input-group" style="display: flex; gap: 10px;">
-                <input type="text" id="p1-name" placeholder="Name" class="glass-input" style="flex: 1;">
-                <input type="text" id="p1-mobile" placeholder="Mobile No." class="glass-input" style="flex: 1;">
+            <div id="contacts-container" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                <!-- Rows injected here by app.js -->
             </div>
             
-            <h4 style="margin-top: 15px; margin-bottom: 5px; color: var(--text-primary);">Person 2 (Match & Gate 3)</h4>
-            <div class="input-group" style="display: flex; gap: 10px;">
-                <input type="text" id="p2-name" placeholder="Name" class="glass-input" style="flex: 1;">
-                <input type="text" id="p2-mobile" placeholder="Mobile No." class="glass-input" style="flex: 1;">
-            </div>
+            <button id="add-contact-btn" class="btn-outline" style="margin-top: 15px; width: 100%; border: 1px dashed var(--text-muted); color: var(--text-muted);">
+                <i class="fa-solid fa-plus"></i> Add Person
+            </button>
 
             <div class="modal-actions" style="margin-top: 20px;">
                 <button id="settings-close-btn" class="btn-secondary">Cancel</button>
-                <button id="settings-save-btn" class="btn-primary">Save Settings</button>
+                <button id="settings-save-btn" class="btn-primary">Save Contacts</button>
             </div>
         </div>
     </div>
