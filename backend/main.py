@@ -232,7 +232,7 @@ async def send_sms(payload: dict):
     import urllib.parse
     import json
     
-    api_key = "6iU5cjJen3Ax0VpglsS4LEQONftboGC9quHXd7wKDrBMhYymTW98Q5LXEdCrNwb3jB1vOAmpasyHYT0U"
+    api_key = os.getenv("FAST2SMS_API_KEY", "")
     url = "https://www.fast2sms.com/dev/bulkV2"
     
     number = payload.get("number")
