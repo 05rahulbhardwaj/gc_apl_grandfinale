@@ -61,6 +61,12 @@
                 <span id="current-date">May 24, 2025</span>
             </div>
             <button id="settings-btn" class="icon-btn"><i class="fa-solid fa-gear"></i></button>
+            <!-- Easter Egg: Google Logo trigger -->
+            <button id="easter-egg-btn" class="icon-btn" title="🥚" style="opacity: 0.3; transition: opacity 0.3s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0.3" onclick="window.location.href='/face-match.html'">
+                <span style="font-weight: 900; font-size: 14px;">
+                    <span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>
+                </span>
+            </button>
         </div>
     </header>
 
@@ -206,7 +212,7 @@
             </div>
         </div>
         <div class="controls-right">
-            <button id="demo-scenario-btn" class="btn-sm btn-outline"><i class="fa-solid fa-play"></i> Run Demo</button>
+            <!-- <button id="demo-scenario-btn" class="btn-sm btn-outline"><i class="fa-solid fa-play"></i> Run Demo</button> -->
             <span class="refresh-indicator"><i class="fa-solid fa-rotate"></i> Auto-refreshing</span>
         </div>
     </footer>

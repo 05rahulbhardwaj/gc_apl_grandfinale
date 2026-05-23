@@ -24,7 +24,7 @@ from typing import Optional
 import cv2
 import socketio
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -270,6 +270,21 @@ async def send_sms(payload: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/face-match")
+async def face_match_endpoint(file: UploadFile = File(...)):
+    """Easter egg: Compare uploaded face with celebrity images."""
+    from backend.camera.face_match import match_face
+    
+    image_data = await file.read()
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, match_face, image_data)
+    
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    
+    return result
+
+
 @app.post("/api/rtsp")
 async def set_rtsp(body: RtspBody):
     """Set a new RTSP URL and (re)start the people counter."""
@@ -311,7 +326,7 @@ async def ticket_feed():
     )
 
 
-from fastapi import File, UploadFile
+
 
 @app.post("/api/zone-scan/{zone_id}")
 async def scan_zone(zone_id: str, file: UploadFile = File(...)):

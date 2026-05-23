@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateClock();
 
     // 5. Button Listeners
-    document.getElementById('demo-scenario-btn').addEventListener('click', startDemoScenario);
+    // document.getElementById('demo-scenario-btn').addEventListener('click', startDemoScenario);
 
     const rtspModal = document.getElementById('rtsp-modal');
     const settingsModal = document.getElementById('settings-modal');
@@ -112,6 +112,116 @@ document.addEventListener('DOMContentLoaded', () => {
         
         btn.innerHTML = originalText;
         btn.disabled = false;
+    });
+
+    // ── Easter Egg: Face Match ──────────────────────────────
+    const fmModal = document.getElementById('face-match-modal');
+    const fmVideo = document.getElementById('fm-video');
+    const fmCanvas = document.getElementById('fm-canvas');
+    const fmWebcam = document.getElementById('fm-webcam-area');
+    const fmLoading = document.getElementById('fm-loading');
+    const fmResults = document.getElementById('fm-results');
+    let fmStream = null;
+
+    function fmShow(el) { el.style.display = 'flex'; }
+    function fmHide(el) { el.style.display = 'none'; }
+
+    document.getElementById('easter-egg-btn').addEventListener('click', async () => {
+        fmModal.classList.remove('hidden');
+        fmShow(fmWebcam);
+        fmHide(fmLoading);
+        fmHide(fmResults);
+        
+        try {
+            fmStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            fmVideo.srcObject = fmStream;
+        } catch (e) {
+            alert('Camera access denied. Please allow camera access.');
+        }
+    });
+
+    function stopFmCamera() {
+        if (fmStream) {
+            fmStream.getTracks().forEach(t => t.stop());
+            fmStream = null;
+        }
+    }
+
+    document.getElementById('close-face-match-btn').addEventListener('click', () => {
+        stopFmCamera();
+        fmModal.classList.add('hidden');
+    });
+
+    document.getElementById('fm-capture-btn').addEventListener('click', async () => {
+        // Capture frame from video
+        fmCanvas.width = fmVideo.videoWidth;
+        fmCanvas.height = fmVideo.videoHeight;
+        const ctx = fmCanvas.getContext('2d');
+        ctx.drawImage(fmVideo, 0, 0);
+        
+        // Show loading
+        fmHide(fmWebcam);
+        fmShow(fmLoading);
+        stopFmCamera();
+
+        // Convert to blob and send
+        fmCanvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob, 'selfie.jpg');
+            
+            try {
+                const res = await fetch('/api/face-match', { method: 'POST', body: formData });
+                if (!res.ok) throw new Error('Face match failed');
+                
+                const data = await res.json();
+                
+                // Hide loading, show results
+                fmHide(fmLoading);
+                fmShow(fmResults);
+                
+                // Best match
+                if (data.best_match) {
+                    document.getElementById('fm-best-name').textContent = `You look like ${data.best_match.name}!`;
+                    document.getElementById('fm-best-score').textContent = `${data.best_match.similarity}% Match`;
+                    document.getElementById('fm-celeb-img').src = data.best_match.thumbnail;
+                    document.getElementById('fm-celeb-label').textContent = data.best_match.name;
+                }
+                document.getElementById('fm-user-img').src = data.user_image;
+                
+                // All matches
+                const allContainer = document.getElementById('fm-all-matches');
+                allContainer.innerHTML = '';
+                data.matches.forEach(m => {
+                    const bar = document.createElement('div');
+                    bar.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.05);';
+                    bar.innerHTML = `
+                        <img src="${m.thumbnail}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <span style="flex: 0 0 120px; color: var(--text-primary); font-weight: 500;">${m.name}</span>
+                        <div style="flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px; height: 20px; overflow: hidden;">
+                            <div style="width: ${m.similarity}%; height: 100%; background: linear-gradient(90deg, #4285F4, #34A853); border-radius: 4px; transition: width 1s ease;"></div>
+                        </div>
+                        <span style="flex: 0 0 45px; text-align: right; color: var(--accent-cyan); font-weight: bold;">${m.similarity}%</span>
+                    `;
+                    allContainer.appendChild(bar);
+                });
+                
+            } catch (err) {
+                fmHide(fmLoading);
+                fmShow(fmWebcam);
+                alert('Face match failed. Please try again.');
+            }
+        }, 'image/jpeg', 0.9);
+    });
+
+    document.getElementById('fm-retake-btn').addEventListener('click', async () => {
+        fmHide(fmResults);
+        fmShow(fmWebcam);
+        try {
+            fmStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            fmVideo.srcObject = fmStream;
+        } catch (e) {
+            alert('Camera access denied.');
+        }
     });
 });
 

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏏 Who's Your Cricket Twin? — Powered by Google</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e1a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .fm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+        }
+        .fm-header h1 { font-size: 1.3rem; }
+        .google-text { font-weight: 900; font-size: 1.4rem; }
+        .back-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.15); }
+
+        /* Main area */
+        .fm-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Webcam view */
+        #fm-webcam-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        #fm-webcam-area p { color: #94a3b8; font-size: 1rem; }
+        #fm-video {
+            width: 500px;
+            max-width: 80vw;
+            border-radius: 16px;
+            background: #000;
+            transform: scaleX(-1);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.15);
+        }
+        .capture-btn {
+            background: linear-gradient(135deg, #4285F4, #34A853);
+            border: none;
+            color: white;
+            padding: 14px 40px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .capture-btn:hover { transform: scale(1.05); box-shadow: 0 5px 25px rgba(66, 133, 244, 0.4); }
+
+        /* Loading */
+        #fm-loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        #fm-loading i { font-size: 3rem; color: #00d4ff; }
+        #fm-loading p { color: #94a3b8; font-size: 1.1rem; }
+
+        /* Results */
+        #fm-results {
+            display: none;
+            width: 100%;
+            max-width: 1100px;
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* Left panel */
+        .result-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .best-name { color: #FBBC05; font-size: 1.6rem; font-weight: 700; }
+        .best-score { color: #00d4ff; font-size: 2rem; font-weight: 900; }
+        .faces-row { display: flex; align-items: center; gap: 25px; margin: 10px 0; }
+        .face-box { text-align: center; }
+        .face-box img {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+        .face-box.user img { border: 3px solid #00d4ff; }
+        .face-box.celeb img { border: 3px solid #FBBC05; }
+        .face-box p { margin-top: 6px; color: #94a3b8; font-size: 0.85rem; }
+        .approx { font-size: 3rem; color: #FBBC05; }
+        .retake-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            padding: 10px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            margin-top: 5px;
+        }
+        .retake-btn:hover { background: rgba(255,255,255,0.15); }
+
+        /* Right panel - leaderboard */
+        .result-right {
+            flex: 1;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            padding-left: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .result-right h3 { color: #e2e8f0; font-size: 1.1rem; margin-bottom: 5px; }
+        .match-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            transition: background 0.2s;
+        }
+        .match-row:hover { background: rgba(255,255,255,0.08); }
+        .match-row img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .match-row .name { flex: 0 0 130px; font-weight: 500; }
+        .match-row .bar-bg {
+            flex: 1;
+            height: 22px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .match-row .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #4285F4, #34A853);
+            transition: width 1s ease;
+        }
+        .match-row .pct { flex: 0 0 50px; text-align: right; color: #00d4ff; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="fm-header">
+        <h1>
+            <span class="google-text">
+                <span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>
+            </span>
+            🏏 Who's Your Cricket Twin?
+        </h1>
+        <button class="back-btn" onclick="window.location.href='/'"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
+    </header>
+
+    <!-- Main -->
+    <div class="fm-main">
+
+        <!-- Webcam -->
+        <div id="fm-webcam-area">
+            <p>Take a selfie and find out which cricketer you look like!</p>
+            <video id="fm-video" autoplay playsinline></video>
+            <canvas id="fm-canvas" style="display:none;"></canvas>
+            <button class="capture-btn" id="fm-capture-btn">📸 Take Selfie</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="fm-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Analyzing your face...</p>
+        </div>
+
+        <!-- Results -->
+        <div id="fm-results">
+            <div class="result-left">
+                <div class="best-name" id="fm-best-name">--</div>
+                <div class="best-score" id="fm-best-score">--% Match</div>
+                <div class="faces-row">
+                    <div class="face-box user">
+                        <img id="fm-user-img" alt="You">
+                        <p>You</p>
+                    </div>
+                    <div class="approx">≈</div>
+                    <div class="face-box celeb">
+                        <img id="fm-celeb-img" alt="Celebrity">
+                        <p id="fm-celeb-label">Celebrity</p>
+                    </div>
+                </div>
+                <button class="retake-btn" id="fm-retake-btn">🔄 Try Again</button>
+            </div>
+            <div class="result-right">
+                <h3>All Matches</h3>
+                <div id="fm-all-matches"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const video = document.getElementById('fm-video');
+        const canvas = document.getElementById('fm-canvas');
+        const webcamArea = document.getElementById('fm-webcam-area');
+        const loadingArea = document.getElementById('fm-loading');
+        const resultsArea = document.getElementById('fm-results');
+        let stream = null;
+
+        function show(el) { el.style.display = 'flex'; }
+        function hide(el) { el.style.display = 'none'; }
+
+        // Start camera on page load
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+            } catch (e) {
+                alert('Camera access denied. Please allow camera access and reload.');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+        }
+
+        // Capture
+        document.getElementById('fm-capture-btn').addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            hide(webcamArea);
+            show(loadingArea);
+            stopCamera();
+
+            canvas.toBlob(async (blob) => {
+                const fd = new FormData();
+                fd.append('file', blob, 'selfie.jpg');
+
+                try {
+                    const res = await fetch('/api/face-match', { method: 'POST', body: fd });
+                    if (!res.ok) throw new Error('Failed');
+                    const data = await res.json();
+
+                    hide(loadingArea);
+                    show(resultsArea);
+
+                    if (data.best_match) {
+                        document.getElementById('fm-best-name').textContent = `You look like ${data.best_match.name}!`;
+                        document.getElementById('fm-best-score').textContent = `${data.best_match.similarity}% Match`;
+                        document.getElementById('fm-celeb-img').src = data.best_match.thumbnail;
+                        document.getElementById('fm-celeb-label').textContent = data.best_match.name;
+                    }
+                    document.getElementById('fm-user-img').src = data.user_image;
+
+                    const container = document.getElementById('fm-all-matches');
+                    container.innerHTML = '';
+                    data.matches.forEach(m => {
+                        const row = document.createElement('div');
+                        row.className = 'match-row';
+                        row.innerHTML = `
+                            <img src="${m.thumbnail}">
+                            <span class="name">${m.name}</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width:${m.similarity}%"></div></div>
+                            <span class="pct">${m.similarity}%</span>
+                        `;
+                        container.appendChild(row);
+                    });
+                } catch (err) {
+                    hide(loadingArea);
+                    show(webcamArea);
+                    startCamera();
+                    alert('Face match failed. Please try again.');
+                }
+            }, 'image/jpeg', 0.9);
+        });
+
+        // Retake
+        document.getElementById('fm-retake-btn').addEventListener('click', () => {
+            hide(resultsArea);
+            show(webcamArea);
+            startCamera();
+        });
+
+        // Init
+        startCamera();
+    </script>
+</body>
+</html>
