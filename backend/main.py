@@ -121,15 +121,13 @@ async def lifespan(app: FastAPI):
     #     logger.warning("Webcam unavailable — ticket scanner disabled")
     #     ticket_scanner = None
 
-    # Preload ALL YOLO model instances so streams start instantly
+    # Preload ONE YOLO model instance for on-demand scans.
+    # Line counter and area counter models will lazy-load on first use
+    # to keep startup time fast for Cloud Run.
     from backend.camera.on_demand_scanner import get_yolo_model
-    from backend.camera.line_counter import _get_line_model
-    from backend.camera.area_counter import _get_area_model
-    logger.info("Preloading YOLOv8 models (3 instances)...")
+    logger.info("Preloading YOLOv8 model...")
     get_yolo_model()
-    _get_line_model()
-    _get_area_model()
-    logger.info("All YOLOv8 models loaded and ready.")
+    logger.info("YOLOv8 model loaded and ready.")
 
     # Kick off async background loops
     # _orchestration_task = asyncio.create_task(_orchestration_loop()) # Disabled per user request
