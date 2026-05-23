@@ -9,9 +9,9 @@ import time
 from datetime import datetime
 from typing import Optional
 
-from openai import OpenAI, APIError, RateLimitError, APITimeoutError
+from groq import Groq, APIError, RateLimitError, APITimeoutError
 
-from backend.config import GROQ_API_KEY, GROQ_MODEL, GROQ_BASE_URL
+from backend.config import GROQ_API_KEY, GROQ_MODEL
 from backend.models import AgentResponse, RiskLevel
 
 logger = logging.getLogger(__name__)
@@ -33,9 +33,8 @@ class BaseAgent:
         self.icon = icon
         self.system_prompt = system_prompt
 
-        self._client = OpenAI(
+        self._client = Groq(
             api_key=GROQ_API_KEY,
-            base_url=GROQ_BASE_URL,
         )
 
     # ── public API ────────────────────────────────────────────

@@ -14,7 +14,6 @@ load_dotenv(PROJECT_ROOT / ".env")
 # ─── Groq LLM ───────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 # ─── RTSP Camera ─────────────────────────────────────────────
 RTSP_URL = os.getenv("RTSP_URL", "")
