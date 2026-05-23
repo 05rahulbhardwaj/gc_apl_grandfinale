@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+msil_env/
+.git/
+.gitignore
+*.md
+activate_2.bat
+run.bat
+test_*.py
