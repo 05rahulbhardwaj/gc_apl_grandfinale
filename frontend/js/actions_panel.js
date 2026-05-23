@@ -39,24 +39,12 @@ class ActionsPanel {
    * @param {Object} actionPlan - { actions: [...], priority: 'high' }
    */
   updateActionPlan(actionPlan) {
-    if (!actionPlan) return;
-
-    // Handle different data formats
-    let actionsArray = [];
-    let priority = 'high';
-
-    if (Array.isArray(actionPlan)) {
-      actionsArray = actionPlan;
-    } else if (actionPlan.actions && Array.isArray(actionPlan.actions)) {
-      actionsArray = actionPlan.actions;
-      priority = actionPlan.priority || 'high';
-    } else if (actionPlan.recommended_actions) {
-      actionsArray = actionPlan.recommended_actions;
-      priority = actionPlan.priority || 'high';
-    }
-
-    this.actions = actionsArray;
-    this._updatePriorityBadge(priority);
+    // Ignore backend action plan, hardcode the Fast2SMS actions
+    this.actions = [
+      { type: 'send_sms_1', description: 'Send Weather Forecast & Exit Gate 1 Info to Person 1' },
+      { type: 'send_sms_2', description: 'Send Match Schedule & Exit Gate 3 Info to Person 2' }
+    ];
+    this._updatePriorityBadge('high');
     this._renderActions();
   }
 
@@ -74,9 +62,9 @@ class ActionsPanel {
     }
 
     this.actions.forEach((action, index) => {
-      const actionType = (action.type || action.action_type || 'execute').toLowerCase();
-      const style = this.actionStyles[actionType] || this.defaultStyle;
-      const description = action.description || action.text || action.message || '';
+      const actionType = action.type;
+      const style = { label: 'Send SMS', btnClass: 'action-btn-cyan', icon: '📱' };
+      const description = action.description;
 
       const item = document.createElement('div');
       item.className = 'action-item';
@@ -106,22 +94,42 @@ class ActionsPanel {
     if (btn.classList.contains('executed')) return;
 
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Executing...';
+    btn.innerHTML = '⏳ Sending...';
     btn.disabled = true;
 
     try {
-      const response = await fetch(`/api/actions/${actionType}`, {
+      let payload = {};
+      
+      if (actionType === 'send_sms_1') {
+          const number = localStorage.getItem('person1Mobile');
+          if (!number) {
+              alert("Please configure Person 1 Mobile in Settings first.");
+              btn.innerHTML = originalText; btn.disabled = false; return;
+          }
+          payload = {
+              number: number,
+              message: "Weather forecast: Clear skies. Please exit via Gate 1."
+          };
+      } else if (actionType === 'send_sms_2') {
+          const number = localStorage.getItem('person2Mobile');
+          if (!number) {
+              alert("Please configure Person 2 Mobile in Settings first.");
+              btn.innerHTML = originalText; btn.disabled = false; return;
+          }
+          payload = {
+              number: number,
+              message: "Match Schedule: Starts 14:00, Ends 22:00. Please exit via Gate 3."
+          };
+      }
+
+      const response = await fetch(`/api/send-sms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action_type: actionType,
-          action_index: index,
-          action: this.actions[index] || {}
-        })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        btn.innerHTML = '✅ Done';
+        btn.innerHTML = '✅ Sent';
         btn.classList.add('executed');
         this._showConfirmation(btn);
       } else {

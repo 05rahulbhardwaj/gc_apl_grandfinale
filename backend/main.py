@@ -220,6 +220,43 @@ async def trigger_action(action_type: str):
     return confirmation
 
 
+@app.post("/api/send-sms")
+async def send_sms(payload: dict):
+    """Send SMS via Fast2SMS API."""
+    import httpx
+    api_key = "6iU5cjJen3Ax0VpglsS4LEQONftboGC9quHXd7wKDrBMhYymTW98Q5LXEdCrNwb3jB1vOAmpasyHYT0U"
+    url = "https://www.fast2sms.com/dev/bulkV2"
+    
+    number = payload.get("number")
+    message = payload.get("message")
+    
+    if not number or not message:
+        raise HTTPException(status_code=400, detail="Number and message required")
+
+    headers = {
+        "authorization": api_key,
+        "Content-Type": "application/json"
+    }
+    data = {
+        "route": "v3",
+        "sender_id": "TXTIND",
+        "message": message,
+        "language": "english",
+        "flash": 0,
+        "numbers": number
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, headers=headers, json=data, timeout=10.0)
+            resp.raise_for_status()
+            logger.info(f"SMS sent to {number}: {resp.text}")
+            return resp.json()
+    except Exception as e:
+        logger.error(f"Failed to send SMS: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/rtsp")
 async def set_rtsp(body: RtspBody):
     """Set a new RTSP URL and (re)start the people counter."""

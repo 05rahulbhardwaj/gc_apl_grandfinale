@@ -34,7 +34,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const rtspModal = document.getElementById('rtsp-modal');
-    document.getElementById('settings-btn').addEventListener('click', () => rtspModal.classList.remove('hidden'));
+    const settingsModal = document.getElementById('settings-modal');
+
+    // Settings Modal
+    document.getElementById('settings-btn').addEventListener('click', () => {
+        document.getElementById('p1-name').value = localStorage.getItem('person1Name') || '';
+        document.getElementById('p1-mobile').value = localStorage.getItem('person1Mobile') || '';
+        document.getElementById('p2-name').value = localStorage.getItem('person2Name') || '';
+        document.getElementById('p2-mobile').value = localStorage.getItem('person2Mobile') || '';
+        settingsModal.classList.remove('hidden');
+    });
+    document.getElementById('settings-close-btn').addEventListener('click', () => settingsModal.classList.add('hidden'));
+    document.getElementById('settings-save-btn').addEventListener('click', () => {
+        localStorage.setItem('person1Name', document.getElementById('p1-name').value);
+        localStorage.setItem('person1Mobile', document.getElementById('p1-mobile').value);
+        localStorage.setItem('person2Name', document.getElementById('p2-name').value);
+        localStorage.setItem('person2Mobile', document.getElementById('p2-mobile').value);
+        settingsModal.classList.add('hidden');
+        addTickerMessage('Notification settings saved locally.');
+    });
+
     document.getElementById('rtsp-close-btn').addEventListener('click', () => rtspModal.classList.add('hidden'));
     document.getElementById('rtsp-save-btn').addEventListener('click', async () => {
         const url = document.getElementById('rtsp-url-input').value;

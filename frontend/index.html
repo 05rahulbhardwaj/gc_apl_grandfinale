@@ -230,6 +230,31 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h3><i class="fa-solid fa-gear"></i> Notification Settings</h3>
+            <p>Configure SMS recipients for the Action Plan.</p>
+            
+            <h4 style="margin-top: 15px; margin-bottom: 5px; color: var(--text-primary);">Person 1 (Weather & Gate 1)</h4>
+            <div class="input-group" style="display: flex; gap: 10px;">
+                <input type="text" id="p1-name" placeholder="Name" class="glass-input" style="flex: 1;">
+                <input type="text" id="p1-mobile" placeholder="Mobile No." class="glass-input" style="flex: 1;">
+            </div>
+            
+            <h4 style="margin-top: 15px; margin-bottom: 5px; color: var(--text-primary);">Person 2 (Match & Gate 3)</h4>
+            <div class="input-group" style="display: flex; gap: 10px;">
+                <input type="text" id="p2-name" placeholder="Name" class="glass-input" style="flex: 1;">
+                <input type="text" id="p2-mobile" placeholder="Mobile No." class="glass-input" style="flex: 1;">
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button id="settings-close-btn" class="btn-secondary">Cancel</button>
+                <button id="settings-save-btn" class="btn-primary">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
     <!-- WebRTC Camera Modal -->
     <div id="camera-modal" class="modal hidden">
         <div class="modal-content glass-panel">
